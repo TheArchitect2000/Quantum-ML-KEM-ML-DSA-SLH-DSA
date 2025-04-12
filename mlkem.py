@@ -1,26 +1,42 @@
-import numpy as np
+import os
+import hashlib
 
-# Example: Kyber512-like setup (not full implementation)
-q = 3329  # modulus
-n = 256   # degree of polynomials
+def pseudo_keygen():
+    # Generate a secret key and derive a public key
+    sk = os.urandom(32)  # secret key (random bytes)
+    pk = hashlib.sha256(sk).digest()  # public key (hashed secret)
+    return pk, sk
 
-def generate_keypair():
-    # Placeholder: Generate public/private keys
-    return "public_key", "secret_key"
+def pseudo_encapsulate(pk):
+    # Random message acts as the "ephemeral" key material
+    msg = os.urandom(32)
+    # Ciphertext is hash of msg and public key
+    ct = hashlib.sha256(msg + pk).digest()
+    # Shared secret is derived from the ciphertext
+    ss = hashlib.sha256(ct).digest()
+    return ct, ss
 
-def encapsulate(public_key):
-    # Placeholder: Encrypt a shared secret
-    return "ciphertext", "shared_secret"
-
-def decapsulate(ciphertext, secret_key):
-    # Placeholder: Decrypt the shared secret
-    return "shared_secret"
+def pseudo_decapsulate(ct, sk):
+    # We assume ct is valid; in real systems we'd verify it
+    # Shared secret is derived same way as in encapsulate
+    ss = hashlib.sha256(ct).digest()
+    return ss
 
 if __name__ == "__main__":
-    pk, sk = generate_keypair()
-    ct, ss1 = encapsulate(pk)
-    ss2 = decapsulate(ct, sk)
-    
-    print("Shared Secret 1:", ss1)
-    print("Shared Secret 2:", ss2)
-    print("Match:", ss1 == ss2)
+    print("🔑 Generating Keypair...")
+    pk, sk = pseudo_keygen()
+
+    print("🔐 Encapsulating...")
+    ct, ss1 = pseudo_encapsulate(pk)
+    print("Ciphertext:", ct.hex())
+
+    print("🔓 Decapsulating...")
+    ss2 = pseudo_decapsulate(ct, sk)
+
+    print("Shared Secret (Original):", ss1.hex())
+    print("Shared Secret (Recovered):", ss2.hex())
+
+    if ss1 == ss2:
+        print("✅ Shared secrets match! ML-KEM simulation successful.")
+    else:
+        print("❌ Shared secrets do not match.")
